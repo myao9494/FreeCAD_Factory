@@ -1,0 +1,153 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+#***************************************************************************
+#*                                                                         *
+#*   Copyright (c) 2015 Yorik van Havre <yorik@uncreated.net>              *  
+#*                                                                         *
+#*   This program is free software; you can redistribute it and/or modify  *
+#*   it under the terms of the GNU Lesser General Public License (LGPL)    *
+#*   as published by the Free Software Foundation; either version 2 of     *
+#*   the License, or (at your option) any later version.                   *
+#*   for detail see the LICENCE text file.                                 *
+#*                                                                         *
+#*   This program is distributed in the hope that it will be useful,       *
+#*   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+#*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+#*   GNU Library General Public License for more details.                  *
+#*                                                                         *
+#*   You should have received a copy of the GNU Library General Public     *
+#*   License along with this program; if not, write to the Free Software   *
+#*   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  *
+#*   USA                                                                   *
+#*                                                                         *
+#***************************************************************************
+
+__title__="FreeCAD Symbols Library Macro"
+__author__ = "Yorik van Havre"
+__url__ = "http://www.freecadweb.org"
+
+'''
+FreeCAD Symbols Library import macro
+
+INSTALLATION
+
+This script is made to be used as a FreeCAD macro, and to be placed
+inside your macros  (default is $HOME/.FreeCAD on mac/linux, 
+C:/Users/youruser/Application Data/FreeCAD on windows).
+
+You must also edit this file and change the configuration line below 
+to reflect the location of your FreeCAD-symbols .
+
+After it is installed on the above location, it will be available
+in the macros menu.
+
+USAGE
+
+This macro adds a browser window to the FreeCAD interface, from
+which you can browse and install items from the library.
+'''
+
+import FreeCAD, FreeCADGui, Part
+from PySide import QtGui, QtCore, QtSvg
+
+param = FreeCAD.ParamGet('User parameter:Plugins/symbols_library')
+s = param.GetString('destination')
+
+if s:
+    LIBRARYPATH = s
+else:
+    folderDialog = QtGui.QFileDialog.getExistingDirectory(None,QtGui.QApplication.translate("SymbolsLibrary", "Location of your existing Symbols library", None, QtGui.QApplication.UnicodeUTF8))
+    param.SetString('destination',folderDialog)
+    LIBRARYPATH = param.GetString('destination')
+
+class ExpDockWidget(QtGui.QDockWidget):
+    "a library explorer dock widget"
+
+    def __init__(self,LIBRARYPATH):
+        QtGui.QDockWidget.__init__(self)
+
+        self.setObjectName("SymbolsLibrary")
+        self.setWindowTitle("Symbols Library")
+
+        # setting up a directory model that shows only svg files
+        self.dirmodel = QtGui.QFileSystemModel()
+        self.dirmodel.setRootPath(LIBRARYPATH)
+        self.dirmodel.setNameFilters(["*.svg", "*.SVG"])
+        self.dirmodel.setNameFilterDisables(0)
+
+        container = QtGui.QWidget()
+        layout = QtGui.QVBoxLayout(container)
+        folder = QtGui.QTreeView();
+        folder.setModel(self.dirmodel)
+        folder.clicked[QtCore.QModelIndex].connect(self.clicked)
+        folder.doubleClicked[QtCore.QModelIndex].connect(self.doubleclicked)
+        # Don't show columns for size, file type, and last modified
+        folder.setHeaderHidden(True)
+        folder.hideColumn(1)
+        folder.hideColumn(2)
+        folder.hideColumn(3)
+        folder.setRootIndex(self.dirmodel.index(LIBRARYPATH))
+        layout.addWidget(folder)
+        self.preview = QtSvg.QSvgWidget()
+        self.preview.setFixedHeight(128)
+        self.preview.setFixedWidth(128)
+        layout.addWidget(self.preview)
+        self.configbutton = QtGui.QPushButton()
+        self.configbutton.setText("Change path")
+        self.configbutton.clicked.connect(self.changepath)
+        layout.addWidget(self.configbutton)
+        layout.setAlignment(self.preview, QtCore.Qt.AlignHCenter)
+        self.setWidget(container)
+        
+    def clicked(self, index):
+        path = self.dirmodel.filePath(index)
+        if path.lower().endswith(".svg"):
+            self.preview.load(path)
+            self.preview.show()
+            return
+        self.preview.hide()
+        
+    def changepath(self):
+        librarypath = FreeCAD.ParamGet('User parameter:Plugins/symbols_library').GetString('destination','')
+        np = QtGui.QFileDialog.getExistingDirectory(self,"Location of your existing Parts library",librarypath)
+        if np:
+            FreeCAD.ParamGet('User parameter:Plugins/symbols_library').SetString('destination',np)
+
+    def doubleclicked(self, index):
+        path = self.dirmodel.filePath(index)
+        page = None
+        for o in FreeCADGui.Selection.getSelection():
+            if o.isDerivedFrom("Drawing::FeaturePage"):
+                page = o
+                break
+        if not page:
+            for o in FreeCAD.ActiveDocument.Objects:
+                if o.isDerivedFrom("Drawing::FeaturePage"):
+                    page = o
+                    break
+        if page:
+            import Drawing
+            f = open(path)
+            svg = f.read()
+            f.close()
+            s = FreeCAD.ActiveDocument.addObject('Drawing::FeatureViewSymbol','Symbol')
+            s.Symbol = Drawing.removeSvgTags(svg)
+            page.addObject(s)
+            FreeCAD.ActiveDocument.recompute()
+        else:
+            FreeCAD.Console.PrintError("No page found either in the selection or the document")
+
+if QtCore.QDir(LIBRARYPATH).exists():
+    m = FreeCADGui.getMainWindow()
+    w = m.findChild(QtGui.QDockWidget,"SymbolsLibrary")
+    if w:
+        if w.isVisible():
+            w.hide()
+        else:
+            w.show()
+    else:
+        m.addDockWidget(QtCore.Qt.RightDockWidgetArea,ExpDockWidget(LIBRARYPATH))
+else:
+    print "Symbols library path ", LIBRARYPATH, "not found."
+
