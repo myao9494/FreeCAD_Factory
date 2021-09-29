@@ -1,0 +1,357 @@
+# -*- coding: utf-8 -*-
+"""
+***************************************************************************
+*   Copyright (c) 2016 2017 2018 2019 <mario52>                           *
+*                                                                         *
+*   This file is a supplement to the FreeCAD CAx development system.      *
+*                                                                         *
+*   This program is free software; you can redistribute it and/or modify  *
+*   it under the terms of the GNU Lesser General Public License (LGPL)    *
+*   as published by the Free Software Foundation; either version 2 of     *
+*   the License, or (at your option) any later version.                   *
+*   for detail see the LICENCE text file.                                 *
+*                                                                         *
+*   This software is distributed in the hope that it will be useful,      *
+*   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+*   GNU Library General Public License for more details.                  *
+*                                                                         *
+*   You should have received a copy of the GNU Library General Public     *
+*   License along with this macro; if not, write to the Free Software     *
+*   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  *
+*   USA                                                                   *
+***************************************************************************
+*           WARNING! All changes in this file will be lost and            *  
+*                  may cause malfunction of the program                   *
+***************************************************************************
+"""
+#Macro_FCCreaLoft 09/02/2016 03/07/2019
+#
+#OS: Windows 8                                  #OS: Windows 10
+#Word size of OS: 64-bit                        #Word size of OS: 64-bit
+#Word size of FreeCAD: 64-bit                   #Word size of FreeCAD: 64-bit
+#Version: 0.15.4671 (Git)                       #Version: 0.19.17171 (Git)
+#Branch: releases/FreeCAD-0-15                  #Build type: Release
+#Hash: 244b3aef360841646cbfe80a1b225c8b39c8380c #Branch: master
+#Python version: 2.7.8                          #Hash: d19470a9711ea604f3ca6c93e46afadf64d5bb87
+#Qt version: 4.8.6                              #Python version: 3.6.6
+#Coin version: 4.0.0a                           #Qt version: 5.6.2
+#OCC version: 6.8.0.oce-0.17                    #Coin version: 4.0.0a
+#                                               #OCC version: 7.3.0
+
+__title__    = "FCCreaLoft"
+__author__   = "mario52"
+__url__      = "http://www.freecadweb.org/index-fr.html"
+__version__  = "00.04"
+__date__     = "03/07/2019 "
+
+__Comment__  = "Create a loft with a list of wire (specially created for Macro FCTexture)"
+__Web__      = "https://forum.freecadweb.org/"
+__Wiki__     = "https://www.freecadweb.org/wiki/Macro_Loft"
+__Icon__     = "/usr/lib/freecad/Mod/plugins/icons/FCCreaLoft"
+__IconW__    = "C:/Users/YourUserName/AppData/Roaming/FreeCAD/"
+__Help__     = "start the macro and follow the instructions"
+__Status__   = "stable"
+__Requires__ = "FreeCAD all"
+
+try:
+    import PyQt4
+    from PyQt4 import QtGui ,QtCore
+    from PyQt4.QtGui import *
+    from PyQt4.QtCore import *
+except Exception:
+    import PySide
+    from PySide import QtGui ,QtCore
+    from PySide.QtGui import *
+    from PySide.QtCore import *
+ 
+import Draft, Part, FreeCAD, math, PartGui, FreeCADGui, FreeCAD
+from math import sqrt, pi, sin, cos, asin
+from FreeCAD import Base
+import FreeCAD
+App = FreeCAD
+
+import sys
+global verPython ; verPython = sys.version_info.major
+
+try:
+    _fromUtf8 = QtCore.QString.fromUtf8
+except AttributeError:
+    def _fromUtf8(s):
+        return s
+
+try:
+    _encoding = QtGui.QApplication.UnicodeUTF8
+    def _translate(context, text, disambig):
+        return QtGui.QApplication.translate(context, text, disambig, _encoding)
+except AttributeError:
+    def _translate(context, text, disambig):
+        return QtGui.QApplication.translate(context, text, disambig)
+
+class Ui_MainWindow(object):
+    def __init__(self):
+        #self.path        = FreeCAD.ConfigGet("AppHomePath")
+        self.path        = FreeCAD.ConfigGet("UserAppData")
+        self.compt_Oject = -1                                                                         #
+        self.loftObject  = []
+        self.doc         = FreeCAD.ActiveDocument
+        self.saut        = 1                                                                          #
+        self.selectionObjects = FreeCADGui.Selection.getSelection()                                   # Select an object or primitive getSelection()
+
+
+    def setupUi(self, MainWindow):
+        global verPython
+        self.window = MainWindow
+        MainWindow.setObjectName(_fromUtf8("MainWindow"))
+        MainWindow.resize(373, 301)
+        self.centralwidget = QtGui.QWidget(MainWindow)
+        self.centralwidget.setObjectName(_fromUtf8("centralwidget"))
+
+        self.PB_01_Sort = QtGui.QPushButton(self.centralwidget)
+        self.PB_01_Sort.setGeometry(QtCore.QRect(290, 70, 70, 23))
+        self.PB_01_Sort.setObjectName(_fromUtf8("PB_01_Sort"))
+        self.PB_01_Sort.setToolTip(u"Sort the datas.")
+        self.PB_01_Sort.clicked.connect(self.on_PB_01_Sort_clicked)                                   #connection pushButton
+
+        self.PB_02_Reverse = QtGui.QPushButton(self.centralwidget)
+        self.PB_02_Reverse.setGeometry(QtCore.QRect(290, 100, 70, 23))
+        self.PB_02_Reverse.setObjectName(_fromUtf8("PB_02_Reverse"))
+        self.PB_02_Reverse.setToolTip(u"Reverse the datas.")
+        self.PB_02_Reverse.clicked.connect(self.on_PB_02_Reverse_clicked)                             #connection pushButton
+
+        self.PB_03_Reset = QtGui.QPushButton(self.centralwidget)
+        self.PB_03_Reset.setGeometry(QtCore.QRect(290, 130, 70, 23))
+        self.PB_03_Reset.setObjectName(_fromUtf8("PB_03_Reset"))
+        self.PB_03_Reset.setToolTip(u"Upgrade the datas selecteds or reset the datas in original list."+"\n"+
+                                      "Or upgrade the new selections in the macro")
+        self.PB_03_Reset.clicked.connect(self.on_PB_03_Reset_clicked)                                 #connection pushButton
+
+        self.PB_06_SelectAll = QtGui.QPushButton(self.centralwidget)
+        self.PB_06_SelectAll.setGeometry(QtCore.QRect(290, 160, 70, 23))
+        self.PB_06_SelectAll.setObjectName(_fromUtf8("PB_06_SelectAll"))
+        self.PB_06_SelectAll.setToolTip("Select all objects in the 3DView.")
+        self.PB_06_SelectAll.clicked.connect(self.on_PB_06_SelectAll_clicked)                         #connection pushButton
+
+        self.SB_01_Saut = QtGui.QSpinBox(self.centralwidget)
+        self.SB_01_Saut.setGeometry(QtCore.QRect(290, 190, 70, 23))
+        self.SB_01_Saut.setMinimum(1.0)
+        self.SB_01_Saut.setMaximum(10000.0)
+        self.SB_01_Saut.setSingleStep(self.saut)
+        self.SB_01_Saut.setToolTip(u"Works all or jump x lines."+"\n"+
+                                    "By default all (1)")
+        self.SB_01_Saut.setObjectName(_fromUtf8("doubleSpinBox_1"))
+        self.SB_01_Saut.valueChanged.connect(self.on_SB_01_Saut_valueChanged)                         #connect on def "on_SB_01_Saut_valueChanged"
+
+        self.PB_04_Quit = QtGui.QPushButton(self.centralwidget)
+        self.PB_04_Quit.setGeometry(QtCore.QRect(290, 220, 70, 23))
+        self.PB_04_Quit.setObjectName(_fromUtf8("PB_04_Quit"))
+        self.PB_04_Quit.setToolTip(u"Quit the macro.")
+        self.PB_04_Quit.clicked.connect(self.on_PB_04_Quit_clicked)                                    #connection pushButton
+
+        self.CB_01_Progress = QtGui.QCheckBox(self.centralwidget)                                      # create object QRadioButton in groupBox
+        self.CB_01_Progress.setGeometry(QtCore.QRect(290, 250, 81, 17))                                # coordinates position
+        self.CB_01_Progress.setObjectName(_fromUtf8("CB_01_Progress"))                                 # name of object
+        self.CB_01_Progress.setChecked(True)                                                           # Check by default True or False
+        self.CB_01_Progress.setToolTip("Used to view the conduct of operations in 3D display")
+#        self.CB_01_Progress.clicked.connect(self.on_CB_01_Progress_clicked)                           # connect on def "on_checkBox_1_clicked"
+
+        self.progressBar = QtGui.QProgressBar(self.centralwidget)
+        self.progressBar.setGeometry(QtCore.QRect(10, 40, 351, 23))
+        self.progressBar.setAlignment(QtCore.Qt.AlignCenter)
+        self.progressBar.setValue(0)
+        self.progressBar.setObjectName(_fromUtf8("progressBar"))
+
+        self.textEdit_01 = QtGui.QTextEdit(self.centralwidget)
+        self.textEdit_01.setGeometry(QtCore.QRect(10, 72, 271, 193))
+        self.textEdit_01.setObjectName(_fromUtf8("textEdit_01"))
+#        self.textEdit_01.textChanged.connect(self.on_textEdit_01_Pressed)                             # connect on def "on_textEdit_01_Pressed"
+
+        self.PB_05_Launch = QtGui.QPushButton(self.centralwidget)
+        self.PB_05_Launch.setGeometry(QtCore.QRect(10, 270, 351, 23))
+        self.PB_05_Launch.setObjectName(_fromUtf8("PB_04_Launch"))
+        self.PB_05_Launch.setToolTip(u"Launch the loft."+"\n"+
+                                       "Are displayed the number of selections"+"\n"+
+                                       "and the number real Loft if Jump x lines is used")
+        self.PB_05_Launch.clicked.connect(self.on_PB_05_Launch_clicked) #connection pushButton
+
+        self.label = QtGui.QLabel(self.centralwidget)
+        self.label.setGeometry(QtCore.QRect(140, 10, 81, 20))
+        font = QtGui.QFont()
+        font.setPointSize(14)
+        self.label.setFont(font)
+        self.label.setObjectName(_fromUtf8("label"))
+        MainWindow.setCentralWidget(self.centralwidget)
+
+        self.retranslateUi(MainWindow)
+        QtCore.QMetaObject.connectSlotsByName(MainWindow)
+
+        self.selectionObjects = FreeCADGui.Selection.getSelection()                                    # Select an object or primitive getSelection()
+        if len(self.selectionObjects) != 0:
+            for selection in self.selectionObjects:                                                    # sort
+                self.loftObject.append(selection.Name)                                                 # sort
+                if verPython < 3:
+                    self.textEdit_01.append(unicode(selection.Name))
+                else:
+                    self.textEdit_01.append(selection.Name)
+                self.PB_05_Launch.setText("Launch the Lofting ( "+str(len(self.loftObject))+" )")
+        else:
+            self.textEdit_01.setText("Select object list , and click the Upgrade button for validate the entries in the macro")
+
+    def retranslateUi(self, MainWindow):
+        try:
+            MainWindow.setWindowFlags(PyQt4.QtCore.Qt.WindowStaysOnTopHint)                            # PyQt4 cette fonction met la fenêtre en avant
+        except Exception:
+            MainWindow.setWindowFlags(PySide.QtCore.Qt.WindowStaysOnTopHint)                           # PySide cette fonction met la fenêtre en avant
+        MainWindow.setWindowTitle("FCCreaLoft (" + __version__ + " - " + __date__ + ")")
+        self.PB_01_Sort.setText("Sort")
+        self.PB_02_Reverse.setText("Reverse")
+
+        if len(self.selectionObjects) == 0:
+            self.PB_03_Reset.setText("Upgrade")
+        else:
+            self.PB_03_Reset.setText("Reset")
+
+        self.PB_04_Quit.setText("Quit")
+        self.CB_01_Progress.setText("View Progr.")
+        self.PB_06_SelectAll.setText("Select all")
+        self.PB_05_Launch.setText("Launch the Lofting ( "+str(len(self.loftObject))+" )")
+        self.label.setText("CreaLoft")
+
+    def on_PB_01_Sort_clicked(self):  # 
+        global verPython
+        if len(self.loftObject) != 0:
+            self.textEdit_01.clear()
+            self.loftObject.sort()                                                                     # sort
+            for nom in self.loftObject:
+                if verPython < 3:
+                    self.textEdit_01.append(unicode(nom))
+                else:
+                    self.textEdit_01.append(nom)
+            self.PB_01_Sort.setEnabled(False)
+        else:
+            App.Console.PrintMessage("No data to sort, select objects"+"\n")
+            self.textEdit_01.clear()
+            self.textEdit_01.setText("No data to sort,"+"\n"+
+                                     "select objects and click the button Upgrade")
+        self.PB_05_Launch.setText("Launch the Lofting ( "+str(len(self.loftObject))+" )")
+#        App.Console.PrintMessage("Sort"+"\n")
+
+    def on_PB_02_Reverse_clicked(self):  # 
+        global verPython
+        if len(self.loftObject) != 0:
+            self.textEdit_01.setText("")
+            self.textEdit_01.clear()
+            self.loftObject.reverse()
+            for nom in self.loftObject:
+                if verPython < 3:
+                    self.textEdit_01.append(unicode(nom))
+                else:
+                    self.textEdit_01.append(nom)
+        else:
+            App.Console.PrintMessage("No data to reverse, select objects"+"\n")
+            self.textEdit_01.clear()
+            self.textEdit_01.setText("No data to reverse,"+"\n"+
+                                     "select objects and click the button Upgrade")
+        self.PB_05_Launch.setText("Launch the Lofting ( "+str(len(self.loftObject))+" )")
+#        App.Console.PrintMessage("Reverse"+"\n")
+
+    def on_PB_03_Reset_clicked(self):  # 
+        global verPython
+        self.textEdit_01.clear()
+        self.loftObject[:]  = []
+        self.compt_Oject = -1                                                                          #
+        self.PB_01_Sort.setEnabled(True)
+        self.selectionObjects = FreeCADGui.Selection.getSelection()                                    # Select an object or primitive getSelection()
+#        App.Console.PrintMessage("Number objects " + str(len(self.selectionObjects)) + "\n")
+
+        for selection in self.selectionObjects:                                                        # sort
+            self.loftObject.append(selection.Name)                                                     # sort
+        for nom in self.loftObject:
+            if verPython < 3:
+                self.textEdit_01.append(unicode(nom))
+            else:
+                self.textEdit_01.append(nom)
+
+        if len(self.loftObject) == 0:
+            App.Console.PrintMessage("No data to reset or upgrade, select objects"+"\n")
+            self.textEdit_01.clear()
+            self.textEdit_01.setText("No data to reset or upgrade,"+"\n"+
+                                     "select objects and click the button Upgrade")
+            self.PB_03_Reset.setText("Upgrade")
+        else:
+            self.PB_03_Reset.setText("Reset")
+        self.saut = 1
+        self.SB_01_Saut.setValue(1)
+        self.PB_05_Launch.setText("Launch the Lofting ( "+str(len(self.loftObject))+" )")
+#        App.Console.PrintMessage("Reset"+"\n")
+
+    def on_PB_06_SelectAll_clicked(self):  # 
+        try:
+            self.loftObject[:]  = []
+            self.compt_Oject = -1                                                                          #
+            self.PB_01_Sort.setEnabled(True)
+            for obj in FreeCAD.ActiveDocument.Objects:
+                objName = obj.Name
+                obj = App.ActiveDocument.getObject(objName)
+                Gui.Selection.addSelection(obj)
+                self.loftObject.append(objName)
+                self.textEdit_01.append(objName)
+            self.textEdit_01.append("Number object(s) : " + str(len(self.loftObject)))
+            self.PB_05_Launch.setText("Launch the Lofting ( "+str(len(self.loftObject))+" )")
+        except Exception:
+            self.textEdit_01.append("No data to select.")
+#        App.Console.PrintMessage("on_PB_06_SelectAll"+"\n")
+
+    def on_SB_01_Saut_valueChanged(self,value):  # 
+        self.saut = value                                                                              #
+        traite = len(self.selectionObjects) / self.saut
+        self.PB_05_Launch.setText("Launch the Lofting ( "+str(len(self.loftObject))+" ) ( "+str(traite)+" )")
+#        App.Console.PrintMessage("Saut "+str(self.saut)+"  "+str(traite)+"\r\n")
+        
+    def on_PB_04_Quit_clicked(self):  # 
+        FreeCAD.Console.PrintMessage("Fin FCCreLoft"+"\n")
+        self.window.hide()
+
+    def on_PB_05_Launch_clicked(self):  # 
+        if len(self.loftObject) != 0:
+            try:
+                self.progressBar.setMaximum(len(self.loftObject))
+                for selection in (self.loftObject):                                                     #
+                    self.compt_Oject += 1                                                               #
+                    if (self.compt_Oject >= 1) and (self.compt_Oject % self.saut == 0):
+                        lofts = self.doc.addObject('Part::RuledSurface', 'Ruled Surface')               # create loft
+        
+                        lofts.Curve1=(self.doc.getObject(self.loftObject[self.compt_Oject-self.saut]),[''])
+                        lofts.Curve2=(self.doc.getObject(self.loftObject[self.compt_Oject  ]),[''])
+
+                        if self.CB_01_Progress.isChecked():
+                            self.progressBar.setValue(self.compt_Oject)
+                            self.doc.recompute()
+                            Gui.updateGui()                                                             # rafraichi l'ecran
+                
+                self.doc.recompute()
+                self.compt_Oject = -1
+                self.textEdit_01.clear()
+                self.textEdit_01.setText("Creation finished successfully"+"\n"+
+                                         str(len(self.loftObject))+" objects lofted"+"\n\n"+
+                                         "Select other object list , and click the Upgrade button for validate the entries in the macro")
+                self.loftObject  = []
+                self.PB_01_Sort.setEnabled(True)
+                self.PB_03_Reset.setText("Upgrade")
+                self.progressBar.setValue(0)
+            except Exception:
+                self.textEdit_01.setText("End of an error"+"\n")
+                App.Console.PrintMessage("End of an error")
+        else:
+            App.Console.PrintMessage("No data to launch, select objects"+"\n"+"Or click reset for upgrade the new selection"+"\n")
+            self.textEdit_01.clear()
+            self.textEdit_01.setText("No data to launch,"+"\n"+
+                                     "select objects and click the button Upgrade")
+        self.PB_05_Launch.setText("Launch the Lofting ")
+
+
+MainWindow = QtGui.QMainWindow()
+ui = Ui_MainWindow()
+ui.setupUi(MainWindow)
+MainWindow.show()
+
