@@ -1,3 +1,0 @@
-"""
-Corridor Design Tools - alignments
-"""

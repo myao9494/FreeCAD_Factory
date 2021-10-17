@@ -1,3 +1,0 @@
-"""
-Trails Corridor Design Tools
-"""
