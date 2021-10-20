@@ -1,0 +1,24 @@
+# -*- coding: utf-8 -*-
+
+# Macro Begin: C:\Users\M151325\AppData\Roaming\FreeCAD\Macro\aaa.FCMacro +++++++++++++++++++++++++++++++++++++++++++++++++
+import FreeCAD
+import Part
+import SplitFeatures
+
+# Gui.runCommand('Std_DlgMacroRecord',0)
+# Gui.Selection.addSelection('Unnamed','Cylinder')
+# Gui.Selection.addSelection('Unnamed','Surface')
+### Begin command Part_CompSplitFeatures
+f = BOPTools.SplitFeatures.makeSlice(name='Slice')
+f.Base = [App.ActiveDocument.Cylinder, App.ActiveDocument.Surface][0]
+f.Tools = [App.ActiveDocument.Cylinder, App.ActiveDocument.Surface][1:]
+f.Mode = 'Split'
+f.Proxy.execute(f)
+f.purgeTouched()
+for obj in f.ViewObject.Proxy.claimChildren():
+    obj.ViewObject.hide()
+CompoundTools.Explode.explodeCompound(f)
+f.ViewObject.hide()
+App.ActiveDocument.recompute()
+### End command Part_CompSplitFeatures
+# Macro End: C:\Users\M151325\AppData\Roaming\FreeCAD\Macro\aaa.FCMacro +++++++++++++++++++++++++++++++++++++++++++++++++

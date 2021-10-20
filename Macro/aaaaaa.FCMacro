@@ -1,0 +1,21 @@
+# -*- coding: utf-8 -*-
+
+# Macro Begin: C:\Users\M151325\AppData\Roaming\FreeCAD\Macro\aaaaaa.FCMacro +++++++++++++++++++++++++++++++++++++++++++++++++
+import FreeCAD
+import Part
+import Part,PartGui
+
+# Gui.runCommand('Std_DlgMacroRecord',0)
+### Begin command Part_Primitives
+from FreeCAD import Base
+### End command Part_Primitives
+App.ActiveDocument.addObject("Part::Cylinder","Cylinder001")
+App.ActiveDocument.Cylinder001.Radius=6.0
+App.ActiveDocument.Cylinder001.Height=16.0
+App.ActiveDocument.Cylinder001.Angle=360.0
+App.ActiveDocument.Cylinder001.Placement=App.Placement(App.Vector(0.0,120.0,0.0),App.Rotation(App.Vector(0.0,0.0,1.0),0.0))
+App.ActiveDocument.Cylinder001.Label='‰~’Œ'
+
+App.ActiveDocument.recompute()
+# Gui.SendMsgToActiveView("ViewFit")
+# Macro End: C:\Users\M151325\AppData\Roaming\FreeCAD\Macro\aaaaaa.FCMacro +++++++++++++++++++++++++++++++++++++++++++++++++

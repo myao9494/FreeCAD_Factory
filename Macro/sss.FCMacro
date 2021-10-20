@@ -1,0 +1,20 @@
+# -*- coding: utf-8 -*-
+
+# Macro Begin: C:\Users\M151325\AppData\Roaming\FreeCAD\Macro\sss.FCMacro +++++++++++++++++++++++++++++++++++++++++++++++++
+import FreeCAD
+import Surface
+
+# Gui.runCommand('Std_DlgMacroRecord',0)
+### Begin command Std_Workbench
+# Gui.activateWorkbench("SurfaceWorkbench")
+### End command Std_Workbench
+# Gui.Selection.addSelection('Unnamed','Slice_child0','Face3',-0.82932,-1.19922,10)
+### Begin command Surface_ExtendFace
+App.ActiveDocument.addObject("Surface::Extend","Surface001")
+App.ActiveDocument.Surface001.Face = (App.getDocument('Unnamed').getObject('Slice_child0'),['Face3',])
+App.ActiveDocument.recompute()
+### End command Surface_ExtendFace
+# Gui.Selection.clearSelection()
+# Gui.Selection.addSelection('Unnamed','Surface001')
+# App.getDocument('Unnamed').getObject('Surface001').ViewObject.doubleClicked()
+# Macro End: C:\Users\M151325\AppData\Roaming\FreeCAD\Macro\sss.FCMacro +++++++++++++++++++++++++++++++++++++++++++++++++

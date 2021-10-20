@@ -1,0 +1,3 @@
+import FreeCAD
+FreeCAD.Gui.activateWorkbench("PartWorkbench")
+FreeCAD.Gui.activateWorkbench("MineWorkbench")

@@ -1,0 +1,28 @@
+# -*- coding: utf-8 -*-
+
+# Macro Begin: C:\Users\M151325\AppData\Roaming\FreeCAD\Macro\kari.FCMacro +++++++++++++++++++++++++++++++++++++++++++++++++
+import FreeCAD
+import Part
+import gui_rotate
+import gui_arrays
+import gui_polararray
+
+# Gui.runCommand('Std_DlgMacroRecord',0)
+# Gui.Selection.addSelection('Unnamed','Cylinder')
+# Gui.Selection.addSelection('Unnamed','Cylinder001')
+# Gui.Selection.addSelection('Unnamed','Cylinder002')
+### Begin command Part_Compound
+App.activeDocument().addObject("Part::Compound","Compound")
+App.activeDocument().Compound.Links = [App.activeDocument().Cylinder,App.activeDocument().Cylinder001,App.activeDocument().Cylinder002,]
+App.ActiveDocument.recompute()
+### End command Part_Compound
+# Gui.Selection.clearSelection()
+# Gui.Selection.addSelection('Unnamed','Compound')
+Gui.runCommand('Draft_Rotate',0)
+Gui.runCommand('Draft_ArrayTools',1)
+_obj_ = Draft.make_polar_array(App.ActiveDocument.Compound, number=5, angle=360.0, center=FreeCAD.Vector(0.0, 75.0, -0.0), use_link=True)
+# Gui.Selection.addSelection('Unnamed','Array')
+_obj_.Fuse = False
+Draft.autogroup(_obj_)
+App.ActiveDocument.recompute()
+# Macro End: C:\Users\M151325\AppData\Roaming\FreeCAD\Macro\kari.FCMacro +++++++++++++++++++++++++++++++++++++++++++++++++
